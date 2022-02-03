@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -36,55 +37,66 @@ public class SecondActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
-            getSupportActionBar().hide();
-            recyclerView= findViewById(R.id.recycleView);
-            editText = findViewById(R.id.editText);
-            search= findViewById(R.id.search);
+        getSupportActionBar().hide();
+        recyclerView = findViewById(R.id.recycleView);
+        editText = findViewById(R.id.editText);
+        search = findViewById(R.id.search);
 
 
-            modelClassList = new ArrayList<>();
-            recyclerView.setLayoutManager(new GridLayoutManager(this,3));
-            recyclerView.setHasFixedSize(true);
-            adapter = new Adapter(getApplicationContext(),modelClassList);
-            recyclerView.setAdapter(adapter);
-            findphotos();
+        modelClassList = new ArrayList<>();
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+        recyclerView.setHasFixedSize(true);
+        adapter = new Adapter(getApplicationContext(), modelClassList);
+        recyclerView.setAdapter(adapter);
+        findphotos();
 
 
-            search.setOnClickListener(l -> {
-                String query = editText.getText().toString().trim().toLowerCase();
-                if (query.isEmpty()){
-                    Toast.makeText(getApplicationContext(), "Enter something", Toast.LENGTH_SHORT).show();
-                }
-                else {
-                    getsearchimage(query);
-                }
-            });
+        search.setOnClickListener(l -> {
+            search();
+        });
+
+        editText.setOnEditorActionListener((textView, action, keyEvent) -> {
+            if (action == EditorInfo.IME_ACTION_DONE) {
+                search();
+                return false;
+            }
+            return true;
+        });
 
     }
 
-        private void getsearchimage(String query) {
-            ApiUtilities.getApiInterface().getSearchImage(query,1,80).enqueue(new Callback<SearchModel>() {
-                @Override
-                public void onResponse(Call<SearchModel> call, Response<SearchModel> response) {
-                    modelClassList.clear();
-                    if (response.isSuccessful()){
-                        modelClassList.addAll(response.body().getPhotos());
-                        adapter.notifyDataSetChanged();
-                    }
-                    else {
-                        Toast.makeText(getApplicationContext(), "Not able to get", Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<SearchModel> call, Throwable t) {
-
-                }
-            });
-
+    private void search() {
+        String query = editText.getText().toString().trim().toLowerCase();
+        if (query.isEmpty()){
+            Toast.makeText(getApplicationContext(), "Enter something", Toast.LENGTH_SHORT).show();
         }
+        else {
+            getsearchimage(query);
+        }
+    }
 
-        private void findphotos() {
+    private void getsearchimage(String query) {
+        ApiUtilities.getApiInterface().getSearchImage(query, 1, 80).enqueue(new Callback<SearchModel>() {
+            @Override
+            public void onResponse(Call<SearchModel> call, Response<SearchModel> response) {
+                modelClassList.clear();
+                if (response.isSuccessful()) {
+                    modelClassList.addAll(response.body().getPhotos());
+                    adapter.notifyDataSetChanged();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Not able to get", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SearchModel> call, Throwable t) {
+
+            }
+        });
+
+    }
+
+    private void findphotos() {
         getsearchimage("fantasy");
 //            ApiUtilities.getApiInterface().getImage(1,80).enqueue(new Callback<SearchModel>() {
 //                @Override
@@ -104,7 +116,7 @@ public class SecondActivity extends AppCompatActivity {
 //                }
 //            });
 //
-        }
+    }
 
 
 }
