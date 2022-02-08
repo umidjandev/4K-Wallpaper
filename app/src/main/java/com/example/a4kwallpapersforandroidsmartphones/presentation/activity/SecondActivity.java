@@ -1,16 +1,19 @@
 package com.example.a4kwallpapersforandroidsmartphones.presentation.activity;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.example.a4kwallpapersforandroidsmartphones.R;
@@ -32,7 +35,11 @@ public class SecondActivity extends AppCompatActivity {
     Adapter adapter;
     EditText editText;
     ImageView search;
+    int page = 1, perPage = 18;
+    NestedScrollView nestedScrollView;
+    ProgressBar progressBar;
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,14 +48,14 @@ public class SecondActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycleView);
         editText = findViewById(R.id.editText);
         search = findViewById(R.id.search);
-
-
+        nestedScrollView = findViewById(R.id.nestedscroll);
+        progressBar = findViewById(R.id.progress_bar);
         modelClassList = new ArrayList<>();
         recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         recyclerView.setHasFixedSize(true);
         adapter = new Adapter(getApplicationContext(), modelClassList);
         recyclerView.setAdapter(adapter);
-        findphotos();
+        findPhotos(page);
 
 
         search.setOnClickListener(l -> {
@@ -63,6 +70,15 @@ public class SecondActivity extends AppCompatActivity {
             return true;
         });
 
+        nestedScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            if(scrollY == v.getChildAt(0).getMeasuredHeight()-v.getMeasuredHeight()){
+                page++;
+                progressBar.setVisibility(View.VISIBLE);
+                findPhotos(page);
+
+            }
+        });
+
     }
 
     private void search() {
@@ -71,15 +87,16 @@ public class SecondActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "Enter something", Toast.LENGTH_SHORT).show();
         }
         else {
-            getsearchimage(query);
+            modelClassList.clear();
+            getSearchImage(query,page);
         }
     }
 
-    private void getsearchimage(String query) {
-        ApiUtilities.getApiInterface().getSearchImage(query, 1, 80).enqueue(new Callback<SearchModel>() {
+    private void getSearchImage(String query, int page ) {
+        ApiUtilities.getApiInterface().getSearchImage(query, page, perPage).enqueue(new Callback<SearchModel>() {
             @Override
             public void onResponse(Call<SearchModel> call, Response<SearchModel> response) {
-                modelClassList.clear();
+
                 if (response.isSuccessful()) {
                     modelClassList.addAll(response.body().getPhotos());
                     adapter.notifyDataSetChanged();
@@ -96,26 +113,27 @@ public class SecondActivity extends AppCompatActivity {
 
     }
 
-    private void findphotos() {
-        getsearchimage("fantasy");
-//            ApiUtilities.getApiInterface().getImage(1,80).enqueue(new Callback<SearchModel>() {
-//                @Override
-//                public void onResponse(Call<SearchModel> call, Response<SearchModel> response) {
-//                    if (response.isSuccessful()){
-//                        modelClassList.addAll(response.body().getPhotos());
-//                        adapter.notifyDataSetChanged();
-//                    }
-//                    else {
-//                        Toast.makeText(getApplicationContext(), "Not able to get", Toast.LENGTH_SHORT).show();
-//                    }
-//                }
-//
-//                @Override
-//                public void onFailure(Call<SearchModel> call, Throwable t) {
-//
-//                }
-//            });
-//
+    private void findPhotos(int page) {
+//        getSearchImage("fantasy",page,perPage);
+            ApiUtilities.getApiInterface().getImage(page,perPage).enqueue(new Callback<SearchModel>() {
+                @SuppressLint("NotifyDataSetChanged")
+                @Override
+                public void onResponse(Call<SearchModel> call, Response<SearchModel> response) {
+                    if (response.isSuccessful()){
+                        modelClassList.addAll(response.body().getPhotos());
+                        adapter.notifyDataSetChanged();
+                    }
+                    else {
+                        Toast.makeText(getApplicationContext(), "Not able to get", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<SearchModel> call, Throwable t) {
+
+                }
+            });
+
     }
 
 
